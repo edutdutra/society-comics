@@ -30,8 +30,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — o .env.example é versionado de propósito, os demais nunca
 .env*
+!.env.example
+
+# cache do importador: HTML baixado de terceiros. Não versionar nem redistribuir.
+/.cache/
 
 # vercel
 .vercel
