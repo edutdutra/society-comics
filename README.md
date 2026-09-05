@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Society Comics
 
-## Getting Started
+Catálogo dos quadrinhos publicados no Brasil pela Panini, com foco no material da DC Comics.
 
-First, run the development server:
+O que torna este projeto diferente de um CRUD comum é o modelo de dados: no Brasil a Panini publica
+sobretudo **encadernados** que compilam várias edições americanas, e a informação de quais edições
+estão dentro de cada volume costuma ser difícil de levantar. Aqui o volume brasileiro é a entidade
+central, e o conteúdo original é um campo estruturado extraído automaticamente do catálogo da
+editora.
+
+## Stack
+
+Next.js 16 · React 19 · Tailwind 4 · shadcn/ui · **Fastify 5 acoplado à API interna do Next** ·
+MongoDB Atlas via Mongoose 9 · Zod 4 · pnpm
+
+A API não roda em processo separado: uma rota catch-all do Next repassa as requisições ao Fastify
+via `fastify.inject()`, em memória. Um processo, um deploy, e todo o ecossistema de plugins,
+schemas e hooks do Fastify disponível. Os detalhes e os limites dessa escolha estão em
+[docs/adr/0001-fastify-dentro-do-next.md](docs/adr/0001-fastify-dentro-do-next.md).
+
+## Rodando
+
+Requer Node >= 20.9 (o projeto usa 22.19, veja `.nvmrc`) e uma conta gratuita no
+[MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env.local     # preencha MONGODB_URI com sua string do Atlas
+pnpm db:indexes                # cria os índices
+pnpm db:seed                   # popula o catálogo de exemplo
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra <http://localhost:3000>. A documentação da API fica em
+<http://localhost:3000/api/docs>, gerada automaticamente a partir dos schemas Zod.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Se a conexão falhar, veja [docs/DATABASE.md](docs/DATABASE.md) — quase sempre é o IP não liberado
+em Network Access ou o nome do banco faltando no path da URI.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Comandos
 
-## Learn More
+| Comando | O que faz |
+|---|---|
+| `pnpm dev` | Aplicação em desenvolvimento |
+| `pnpm build` | Build de produção |
+| `pnpm check` | Lint, typecheck e formatação |
+| `pnpm db:seed` | Popula o catálogo de exemplo (idempotente) |
+| `pnpm db:indexes` | Cria e sincroniza os índices |
+| `pnpm import:panini --dry-run --limit=5` | Importador do catálogo da Panini |
 
-To learn more about Next.js, take a look at the following resources:
+## Documentação
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [Arquitetura](docs/ARCHITECTURE.md) — como Next, Fastify e Mongoose se encaixam
+- [Modelo de dados](docs/DATA-MODEL.md) — a coleção `publications` e por que ela é assim
+- [Banco de dados](docs/DATABASE.md) — Atlas, índices, problemas comuns
+- [Importador](docs/IMPORTER.md) — como os dados são coletados, e sob quais regras
+- [Convenções](docs/CONVENTIONS.md) — estrutura, padrões, commits
+- [Roadmap](docs/ROADMAP.md) — o que ainda falta
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Sobre os dados
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Os metadados são coletados do catálogo público da Panini, respeitando o `robots.txt`, com limite de
+uma requisição por segundo e `User-Agent` identificando o projeto. Capas são **referenciadas** pela
+URL de origem, nunca copiadas ou redistribuídas. Este é um projeto pessoal de catalogação, sem fim
+comercial. Ver [docs/IMPORTER.md](docs/IMPORTER.md).
